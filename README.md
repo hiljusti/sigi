@@ -143,10 +143,12 @@ $ alias home-todo='ssh -qt user@host.or.ip sigi --stack=home-todo'
 > Protip: If you do a bunch of machine hopping via SSH, consider adding host
 aliases in [`$HOME/.ssh/config`](https://man.openbsd.org/ssh_config.5). I set
 these up something like this:
+```
     Host hq
       User boonieppper
       HostName 192.168.x.x
       IdentityFile ~/.ssh/etc
+```
 which allows for just running `ssh hq`, for example.
 
 ## `sigi` as a local stack-based database
