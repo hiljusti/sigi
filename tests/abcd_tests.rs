@@ -143,13 +143,28 @@ fn sigi_abcd_tests() {
     res.assert_stdout_lines_eq(&["Deleted: d", "Now: c"]);
     res.assert_stderr_empty();
 
+    let res = sigi(stack, &["complete", "1"]);
+    res.assert_success();
+    res.assert_stdout_lines_eq(&["Completed: b", "Now: c"]);
+    res.assert_stderr_empty();
+
     let res = sigi(stack, &["complete"]);
     res.assert_success();
-    res.assert_stdout_lines_eq(&["Completed: c", "Now: b"]);
+    res.assert_stdout_lines_eq(&["Completed: c", "Now: a"]);
+    res.assert_stderr_empty();
+
+    let res = sigi(stack, &["add", "b"]);
+    res.assert_success();
+    res.assert_stdout_lines_eq(&["Created: b"]);
+    res.assert_stderr_empty();
+
+    let res = sigi(stack, &["add", "c"]);
+    res.assert_success();
+    res.assert_stdout_lines_eq(&["Created: c"]);
     res.assert_stderr_empty();
 
     let res = sigi(stack, &["delete-all"]);
     res.assert_success();
-    res.assert_stdout_eq("Deleted: 2 items\n");
+    res.assert_stdout_eq("Deleted: 3 items\n");
     res.assert_stderr_empty();
 }

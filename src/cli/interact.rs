@@ -199,30 +199,27 @@ enum ParseEffectResult {
 fn parse_effect(tokens: Vec<&str>, stack: String) -> ParseEffectResult {
     let term = tokens.first().unwrap_or(&"");
 
-    let parse_n = || {
-        tokens
-            .get(1)
-            .and_then(|s| usize::from_str(s).ok())
-            .unwrap_or(DEFAULT_SHORT_LIST_LIMIT)
-    };
+    let parse_n = || tokens.get(1).and_then(|&s| usize::from_str(s).ok());
 
     use ParseEffectResult::*;
     use StackEffect::*;
 
     if COMPLETE_TERMS.contains(term) {
-        return Effect(Complete { stack });
+        let index = parse_n().unwrap_or(0);
+        return Effect(Complete { stack, index });
     }
     if COUNT_TERMS.contains(term) {
         return Effect(Count { stack });
     }
     if DELETE_TERMS.contains(term) {
-        return Effect(Delete { stack });
+        let index = parse_n().unwrap_or(0);
+        return Effect(Delete { stack, index });
     }
     if DELETE_ALL_TERMS.contains(term) {
         return Effect(DeleteAll { stack });
     }
     if HEAD_TERMS.contains(term) {
-        let n = parse_n();
+        let n = parse_n().unwrap_or(DEFAULT_SHORT_LIST_LIMIT);
         return Effect(Head { stack, n });
     }
     if IS_EMPTY_TERMS.contains(term) {
@@ -285,7 +282,7 @@ fn parse_effect(tokens: Vec<&str>, stack: String) -> ParseEffectResult {
         return Effect(Swap { stack });
     }
     if TAIL_TERMS.contains(term) {
-        let n = parse_n();
+        let n = parse_n().unwrap_or(DEFAULT_SHORT_LIST_LIMIT);
         return Effect(Tail { stack, n });
     }
 

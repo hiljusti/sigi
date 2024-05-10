@@ -106,6 +106,9 @@ enum Command {
     /// Move the current item to "<STACK>_history" and mark as completed
     #[command(visible_aliases = &COMPLETE_TERMS[1..])]
     Complete {
+        /// The number of the item to complete. Default is the most recent item (0 index)
+        n: Option<usize>,
+
         #[command(flatten)]
         fc: FormatConfig,
     },
@@ -120,6 +123,9 @@ enum Command {
     /// Move the current item to "<STACK>_history" and mark as deleted
     #[command(visible_aliases = &DELETE_TERMS[1..])]
     Delete {
+        /// The number of the item to delete. Default is the most recent item (0 index)
+        n: Option<usize>,
+
         #[command(flatten)]
         fc: FormatConfig,
     },
@@ -247,9 +253,21 @@ impl Command {
     fn into_effect_and_fc(self, stack: String) -> (StackEffect, FormatConfig) {
         use StackEffect::*;
         match self {
-            Command::Complete { fc } => (Complete { stack }, fc),
+            Command::Complete { n, fc } => (
+                Complete {
+                    stack,
+                    index: n.unwrap_or(0),
+                },
+                fc,
+            ),
             Command::Count { fc } => (Count { stack }, fc),
-            Command::Delete { fc } => (Delete { stack }, fc),
+            Command::Delete { n, fc } => (
+                Delete {
+                    stack,
+                    index: n.unwrap_or(0),
+                },
+                fc,
+            ),
             Command::DeleteAll { fc } => (DeleteAll { stack }, fc),
             Command::Head { n, fc } => {
                 let n = n.unwrap_or(DEFAULT_SHORT_LIST_LIMIT);

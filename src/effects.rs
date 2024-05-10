@@ -7,8 +7,8 @@ const HISTORY_SUFFIX: &str = "_history";
 
 pub enum StackEffect {
     Push { stack: String, content: String },
-    Complete { stack: String },
-    Delete { stack: String },
+    Complete { stack: String, index: usize },
+    Delete { stack: String, index: usize },
     DeleteAll { stack: String },
     Pick { stack: String, indices: Vec<usize> },
     Move { stack: String, dest: String },
@@ -30,8 +30,8 @@ impl StackEffect {
         use StackEffect::*;
         match self {
             Push { stack, content } => push_content(stack, content, backend, output),
-            Complete { stack } => complete_latest_item(stack, backend, output),
-            Delete { stack } => delete_latest_item(stack, backend, output),
+            Complete { stack, index } => complete_item(stack, index, backend, output),
+            Delete { stack, index } => delete_latest_item(stack, index, backend, output),
             DeleteAll { stack } => delete_all_items(stack, backend, output),
             Pick { stack, indices } => pick_indices(stack, indices, backend, output),
             Move { stack, dest } => move_latest_item(stack, dest, backend, output),
@@ -71,11 +71,12 @@ fn push_item(stack: String, item: Item, backend: &Backend, output: &OutputFormat
     output.log(vec!["action", "item"], vec![vec!["Created", &contents]]);
 }
 
-fn complete_latest_item(stack: String, backend: &Backend, output: &OutputFormat) {
+fn complete_item(stack: String, index: usize, backend: &Backend, output: &OutputFormat) {
     if let Ok(items) = backend.load(&stack) {
         let mut items = items;
-        if let Some(item) = items.pop() {
-            let mut item = item;
+
+        if items.len() > index {
+            let mut item = items.remove(items.len() - index - 1);
             item.mark_completed();
 
             // Push the now-marked-completed item to history stack.
@@ -101,11 +102,12 @@ fn complete_latest_item(stack: String, backend: &Backend, output: &OutputFormat)
     }
 }
 
-fn delete_latest_item(stack: String, backend: &Backend, output: &OutputFormat) {
+fn delete_latest_item(stack: String, index: usize, backend: &Backend, output: &OutputFormat) {
     if let Ok(items) = backend.load(&stack) {
         let mut items = items;
-        if let Some(item) = items.pop() {
-            let mut item = item;
+
+        if items.len() > index {
+            let mut item = items.remove(items.len() - index - 1);
             item.mark_deleted();
 
             // Push the now-marked-deleted item to history stack.
