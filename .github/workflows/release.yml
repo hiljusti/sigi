@@ -27,6 +27,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           RUSTTARGET: ${{ matrix.target }}
-          TOOLCHAIN_VERSION: 1.73.0
+          TOOLCHAIN_VERSION: 1.78.0
           ARCHIVE_TYPES: tar.gz zip
           EXTRA_FILES: LICENSE README.md sigi.1
