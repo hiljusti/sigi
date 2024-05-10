@@ -349,10 +349,6 @@ fn list_stacks(backend: &Backend, output: &OutputFormat) {
 
 // ===== ListAll/Head/Tail =====
 
-trait Listable {
-    fn range(self) -> ListRange;
-}
-
 struct ListRange {
     stack: String,
     // Ignored if starting "from_end".
