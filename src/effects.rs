@@ -1,3 +1,7 @@
+use std::process::Command;
+
+use chrono::Local;
+
 use crate::data::{Backend, Item};
 use crate::output::OutputFormat;
 
@@ -6,23 +10,68 @@ const HISTORY_SUFFIX: &str = "_history";
 // TODO: Consider more shuffle words: https://docs.factorcode.org/content/article-shuffle-words.html
 
 pub enum StackEffect {
-    Push { stack: String, content: String },
-    Complete { stack: String, index: usize },
-    Delete { stack: String, index: usize },
-    DeleteAll { stack: String },
-    Pick { stack: String, indices: Vec<usize> },
-    Move { stack: String, dest: String },
-    MoveAll { stack: String, dest: String },
-    Swap { stack: String },
-    Rot { stack: String },
-    Next { stack: String },
-    Peek { stack: String },
-    ListAll { stack: String },
+    Push {
+        stack: String,
+        content: String,
+    },
+    Complete {
+        stack: String,
+        index: usize,
+    },
+    Delete {
+        stack: String,
+        index: usize,
+    },
+    DeleteAll {
+        stack: String,
+    },
+    Edit {
+        stack: String,
+        editor: String,
+        index: usize,
+    },
+    Pick {
+        stack: String,
+        indices: Vec<usize>,
+    },
+    Move {
+        stack: String,
+        dest: String,
+    },
+    MoveAll {
+        stack: String,
+        dest: String,
+    },
+    Swap {
+        stack: String,
+    },
+    Rot {
+        stack: String,
+    },
+    Next {
+        stack: String,
+    },
+    Peek {
+        stack: String,
+    },
+    ListAll {
+        stack: String,
+    },
     ListStacks,
-    Head { stack: String, n: usize },
-    Tail { stack: String, n: usize },
-    Count { stack: String },
-    IsEmpty { stack: String },
+    Head {
+        stack: String,
+        n: usize,
+    },
+    Tail {
+        stack: String,
+        n: usize,
+    },
+    Count {
+        stack: String,
+    },
+    IsEmpty {
+        stack: String,
+    },
 }
 
 impl StackEffect {
@@ -33,6 +82,11 @@ impl StackEffect {
             Complete { stack, index } => complete_item(stack, index, backend, output),
             Delete { stack, index } => delete_latest_item(stack, index, backend, output),
             DeleteAll { stack } => delete_all_items(stack, backend, output),
+            Edit {
+                stack,
+                editor,
+                index,
+            } => edit_item(stack, editor, index, backend, output),
             Pick { stack, indices } => pick_indices(stack, indices, backend, output),
             Move { stack, dest } => move_latest_item(stack, dest, backend, output),
             MoveAll { stack, dest } => move_all_items(stack, dest, backend, output),
@@ -152,6 +206,56 @@ fn delete_all_items(stack: String, backend: &Backend, output: &OutputFormat) {
             vec!["action", "item"],
             vec![vec!["Deleted", &format!("{} items", n_deleted)]],
         );
+    }
+}
+
+fn edit_item(
+    stack: String,
+    editor: String,
+    index: usize,
+    backend: &Backend,
+    output: &OutputFormat,
+) {
+    if let Ok(items) = backend.load(&stack) {
+        let mut items = items;
+        if index < items.len() {
+            let tmp = std::env::temp_dir().as_path().join("sigi");
+            std::fs::create_dir_all(&tmp).unwrap_or_else(|err| {
+                panic!(
+                    "Unable to create temporary directory {:?} for editing: {}",
+                    tmp, err
+                )
+            });
+            let tmpfile = tmp.as_path().join(Local::now().timestamp().to_string());
+            std::fs::write(&tmpfile, &items[index].contents).unwrap_or_else(|err| {
+                panic!(
+                    "Unable to write to temporary file {:?} for editing: {}",
+                    tmpfile, err
+                )
+            });
+
+            let editor = editor.split_whitespace().collect::<Vec<_>>();
+
+            let edit_exit_code = Command::new(editor[0])
+                .args(&editor[1..])
+                .arg(&tmpfile)
+                .status()
+                .unwrap_or_else(|err| panic!("Failed to execute {:?} editor: {}", editor, err));
+
+            if edit_exit_code.success() {
+                let new_content = std::fs::read_to_string(&tmpfile).unwrap_or_else(|err| {
+                    panic!(
+                        "Unable to read from temporary file {:?} after editing: {}",
+                        tmpfile, err
+                    )
+                });
+                items[index].contents.clone_from(&new_content);
+
+                backend.save(&stack, items).unwrap();
+
+                output.log(vec!["action", "item"], vec![vec!["Edited", &new_content]]);
+            }
+        }
     }
 }
 

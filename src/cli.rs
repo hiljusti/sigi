@@ -137,6 +137,21 @@ enum Command {
         fc: FormatConfig,
     },
 
+    /// Edit the content of an item. Other metadata like creation date is left unchanged.
+    #[command()]
+    Edit {
+        /// The editor to execute. If unspecified, the editor launched will be the value of
+        /// VISUAL, EDITOR, or if both env variables are unset, nano.
+        #[arg(short, long)]
+        editor: Option<String>,
+
+        /// The number of the item to edit. Default is the most recent item (0 index)
+        n: Option<usize>,
+
+        #[command(flatten)]
+        fc: FormatConfig,
+    },
+
     /// Print the first N items (default is 10)
     #[command(visible_aliases = &HEAD_TERMS[1..])]
     Head {
@@ -269,6 +284,17 @@ impl Command {
                 fc,
             ),
             Command::DeleteAll { fc } => (DeleteAll { stack }, fc),
+            Command::Edit { editor, n, fc } => (
+                Edit {
+                    stack,
+                    editor: editor
+                        .or_else(|| std::env::var("VISUAL").ok())
+                        .or_else(|| std::env::var("EDITOR").ok())
+                        .unwrap_or("nano".into()),
+                    index: n.unwrap_or(0),
+                },
+                fc,
+            ),
             Command::Head { n, fc } => {
                 let n = n.unwrap_or(DEFAULT_SHORT_LIST_LIMIT);
                 (Head { n, stack }, fc)
