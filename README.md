@@ -71,7 +71,7 @@ The following additional commands are available:
 
 `sigi` can understand `do` (create a task) and `done` (complete a task).
 
-```
+```console
 $ alias todo='sigi --stack todo'
 
 $ todo do Write some code
@@ -101,14 +101,14 @@ stacks as you can think of names.
 
 Forgot what to do next?
 
-```
+```console
 $ todo
 Now: Get a drink
 ```
 
 Not going to do it?
 
-```
+```console
 $ todo delete
 Deleted: Get a drink
 ```
@@ -118,14 +118,14 @@ Deleted: Get a drink
 Extending the alias idea, you can use `sigi` to store anything you want to
 remember later.
 
-```
+```console
 $ alias watch-later='sigi --stack watch-later'
 
 $ watch-later add One Punch Man
 Creating: One Punch Man
 ```
 
-```
+```console
 $ alias story-ideas='sigi --stack=story-ideas'
 
 $ story-ideas add Alien race lives backwards through time.
@@ -138,14 +138,15 @@ If you have a host you can access remotely, using a tool like
 [OpenSSH](https://www.openssh.com), you can also use sigi across machines.
 Consider using an alias like this:
 
-```
+```console
 $ alias home-todo='ssh -qt user@host.or.ip sigi --stack=home-todo'
 ```
 
 > Protip: If you do a bunch of machine hopping via SSH, consider adding host
 aliases in [`$HOME/.ssh/config`](https://man.openbsd.org/ssh_config.5). I set
 these up something like this:
-> ```
+
+> ```ssh-config
 > Host hq
 >     User boonieppper
 >     HostName 192.168.x.x
@@ -174,8 +175,8 @@ something beefier with stack semantics, check out Redis.
 If your packaging system doesn't have it yet, the best way to install `sigi` is
 through the Rust language package manager, `cargo`:
 
-```
-cargo install sigi
+```console
+$ cargo install sigi
 ```
 
 Instructions on installing `cargo` can be found here:
