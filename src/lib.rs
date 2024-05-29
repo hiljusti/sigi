@@ -6,8 +6,8 @@
 //!
 //! Its "database" is currently little more than json files, and handles only
 //! String values. It can work for research or small loads, but would be
-//! sluggish for anything that needs to care about performance. Other backends
-//! like Redis and SQLite are planned.
+//! sluggish for anything that needs to care about performance. Other data
+//! stores like Redis and SQLite are planned.
 //!
 //! Other internals are documented, but the project is early in development
 //! and should be considered **unstable** at best.

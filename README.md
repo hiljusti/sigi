@@ -45,13 +45,14 @@ Commands:
   help         Print this message or the help of the given subcommand(s)
 
 Options:
-  -q, --quiet            Omit any leading labels or symbols. Recommended for use in shell scripts
-  -s, --silent           Omit any output at all
-  -v, --verbose          Print more information, like when an item was created [aliases: noisy]
-  -f, --format <FORMAT>  Use a programmatic format. Options include [csv, json, json-compact, tsv]. Not compatible with quiet/silent/verbose [possible values: csv, json, json-compact, tsv]
-  -t, --stack <STACK>    Manage items in a specific stack [aliases: topic, about, namespace]
-  -h, --help             Print help (see more with '--help')
-  -V, --version          Print version
+  -q, --quiet                    Omit any leading labels or symbols. Recommended for use in shell scripts
+  -s, --silent                   Omit any output at all
+  -v, --verbose                  Print more information, like when an item was created [aliases: noisy]
+  -f, --format <FORMAT>          Use a programmatic format. Options include [csv, json, json-compact, tsv]. Not compatible with quiet/silent/verbose [possible values: csv, json, json-compact, tsv]
+  -t, --stack <STACK>            Manage items in a specific stack [aliases: topic, about, namespace]
+  -d, --data-store <DATA_STORE>  (Advanced) Manage sigi stacks in a specific directory. The default is either the value of a SIGI_HOME environment variable or your OS-specific home directory [aliases: dir, directory, store]
+  -h, --help                     Print help (see more with '--help')
+  -V, --version                  Print version
 
 INTERACTIVE MODE:
 

@@ -11,7 +11,7 @@ const HUMAN_PROMPT: &str = "🌴 ▶ ";
 pub const INTERACT_INSTRUCTIONS: &str = "INTERACTIVE MODE:
 
 Use subcommands in interactive mode directly. \
-No OPTIONS (flags) are understood in interactive mode. \
+No OPTIONS (flags) of subcommands are understood in interactive mode. \
 The ; character can be used to separate commands.
 
 The following additional commands are available:
@@ -34,7 +34,7 @@ Use subcommands in interactive mode directly. For example:
     🌴 ▶ exit
     exit: Buen biåhe!
 
-No OPTIONS (flags) are understood in interactive mode.
+No OPTIONS (flags) of subcommands are understood in interactive mode.
 
 The ; character can be used to separate commands.
 
@@ -50,7 +50,7 @@ In interactive mode, the following additional commands are available:
 
 // TODO: pagination/scrollback?
 // TODO: more comprehensive tests
-pub fn interact(original_stack: String, output: OutputFormat) {
+pub fn interact(original_stack: String, data_store: DataStore, output: OutputFormat) {
     print_welcome_msg(output);
 
     let mut rl = DefaultEditor::new().expect("Unable to create readline.");
@@ -81,7 +81,7 @@ pub fn interact(original_stack: String, output: OutputFormat) {
                 ShortHelp => Cli::command().print_help().unwrap(),
                 LongHelp => Cli::command().print_long_help().unwrap(),
                 Clear => clearscreen::clear().expect("Failed to clear screen"),
-                DoEffect(effect) => effect.run(&DEFAULT_BACKEND, &output),
+                DoEffect(effect) => effect.run(&data_store, &output),
                 UseStack(new_stack) => {
                     stack = new_stack;
                     output.log(vec!["update", "stack"], vec![vec!["Active stack", &stack]]);

@@ -2,7 +2,7 @@ use std::process::Command;
 
 use chrono::Local;
 
-use crate::data::{Backend, Item};
+use crate::data::{DataStore, Item};
 use crate::output::OutputFormat;
 
 const HISTORY_SUFFIX: &str = "_history";
@@ -75,44 +75,44 @@ pub enum StackEffect {
 }
 
 impl StackEffect {
-    pub fn run(self, backend: &Backend, output: &OutputFormat) {
+    pub fn run(self, data_store: &DataStore, output: &OutputFormat) {
         use StackEffect::*;
         match self {
-            Push { stack, content } => push_content(stack, content, backend, output),
-            Complete { stack, index } => complete_item(stack, index, backend, output),
-            Delete { stack, index } => delete_latest_item(stack, index, backend, output),
-            DeleteAll { stack } => delete_all_items(stack, backend, output),
+            Push { stack, content } => push_content(stack, content, data_store, output),
+            Complete { stack, index } => complete_item(stack, index, data_store, output),
+            Delete { stack, index } => delete_latest_item(stack, index, data_store, output),
+            DeleteAll { stack } => delete_all_items(stack, data_store, output),
             Edit {
                 stack,
                 editor,
                 index,
-            } => edit_item(stack, editor, index, backend, output),
-            Pick { stack, indices } => pick_indices(stack, indices, backend, output),
-            Move { stack, dest } => move_latest_item(stack, dest, backend, output),
-            MoveAll { stack, dest } => move_all_items(stack, dest, backend, output),
-            Swap { stack } => swap_latest_two_items(stack, backend, output),
-            Rot { stack } => rotate_latest_three_items(stack, backend, output),
-            Next { stack } => next_to_latest(stack, backend, output),
-            Peek { stack } => peek_latest_item(stack, backend, output),
-            ListAll { stack } => list_all_items(stack, backend, output),
-            ListStacks => list_stacks(backend, output),
-            Head { stack, n } => list_n_latest_items(stack, n, backend, output),
-            Tail { stack, n } => list_n_oldest_items(stack, n, backend, output),
-            Count { stack } => count_all_items(stack, backend, output),
-            IsEmpty { stack } => is_empty(stack, backend, output),
+            } => edit_item(stack, editor, index, data_store, output),
+            Pick { stack, indices } => pick_indices(stack, indices, data_store, output),
+            Move { stack, dest } => move_latest_item(stack, dest, data_store, output),
+            MoveAll { stack, dest } => move_all_items(stack, dest, data_store, output),
+            Swap { stack } => swap_latest_two_items(stack, data_store, output),
+            Rot { stack } => rotate_latest_three_items(stack, data_store, output),
+            Next { stack } => next_to_latest(stack, data_store, output),
+            Peek { stack } => peek_latest_item(stack, data_store, output),
+            ListAll { stack } => list_all_items(stack, data_store, output),
+            ListStacks => list_stacks(data_store, output),
+            Head { stack, n } => list_n_latest_items(stack, n, data_store, output),
+            Tail { stack, n } => list_n_oldest_items(stack, n, data_store, output),
+            Count { stack } => count_all_items(stack, data_store, output),
+            IsEmpty { stack } => is_empty(stack, data_store, output),
         }
     }
 }
 
-fn push_content(stack: String, content: String, backend: &Backend, output: &OutputFormat) {
+fn push_content(stack: String, content: String, data_store: &DataStore, output: &OutputFormat) {
     let item = Item::new(&content);
-    push_item(stack, item, backend, output);
+    push_item(stack, item, data_store, output);
 }
 
-fn push_item(stack: String, item: Item, backend: &Backend, output: &OutputFormat) {
+fn push_item(stack: String, item: Item, data_store: &DataStore, output: &OutputFormat) {
     let contents = item.contents.clone();
 
-    let items = if let Ok(items) = backend.load(&stack) {
+    let items = if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
         items.push(item);
         items
@@ -120,13 +120,13 @@ fn push_item(stack: String, item: Item, backend: &Backend, output: &OutputFormat
         vec![item]
     };
 
-    backend.save(&stack, items).unwrap();
+    data_store.save(&stack, items).unwrap();
 
     output.log(vec!["action", "item"], vec![vec!["Created", &contents]]);
 }
 
-fn complete_item(stack: String, index: usize, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn complete_item(stack: String, index: usize, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
 
         if items.len() > index {
@@ -137,12 +137,12 @@ fn complete_item(stack: String, index: usize, backend: &Backend, output: &Output
             push_item(
                 stack_history_of(&stack),
                 item.clone(),
-                backend,
+                data_store,
                 &OutputFormat::Silent,
             );
 
             // Save the original stack without that item.
-            backend.save(&stack, items).unwrap();
+            data_store.save(&stack, items).unwrap();
 
             output.log(
                 vec!["action", "item"],
@@ -152,12 +152,12 @@ fn complete_item(stack: String, index: usize, backend: &Backend, output: &Output
     }
 
     if output.is_nonquiet_for_humans() {
-        peek_latest_item(stack, backend, output);
+        peek_latest_item(stack, data_store, output);
     }
 }
 
-fn delete_latest_item(stack: String, index: usize, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn delete_latest_item(stack: String, index: usize, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
 
         if items.len() > index {
@@ -168,12 +168,12 @@ fn delete_latest_item(stack: String, index: usize, backend: &Backend, output: &O
             push_item(
                 stack_history_of(&stack),
                 item.clone(),
-                backend,
+                data_store,
                 &OutputFormat::Silent,
             );
 
             // Save the original stack without that item.
-            backend.save(&stack, items).unwrap();
+            data_store.save(&stack, items).unwrap();
 
             output.log(
                 vec!["action", "item"],
@@ -183,24 +183,24 @@ fn delete_latest_item(stack: String, index: usize, backend: &Backend, output: &O
     }
 
     if output.is_nonquiet_for_humans() {
-        peek_latest_item(stack, backend, output);
+        peek_latest_item(stack, data_store, output);
     }
 }
 
-fn delete_all_items(stack: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn delete_all_items(stack: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
         items.iter_mut().for_each(|item| item.mark_deleted());
         let n_deleted = items.len();
 
         // Push the now-marked-deleted items to history stack.
         let history_stack = &stack_history_of(&stack);
-        let mut history = backend.load(history_stack).unwrap_or_default();
+        let mut history = data_store.load(history_stack).unwrap_or_default();
         history.append(&mut items);
-        backend.save(history_stack, history).unwrap();
+        data_store.save(history_stack, history).unwrap();
 
         // Save the original stack as empty now.
-        backend.save(&stack, vec![]).unwrap();
+        data_store.save(&stack, vec![]).unwrap();
 
         output.log(
             vec!["action", "item"],
@@ -213,10 +213,10 @@ fn edit_item(
     stack: String,
     editor: String,
     index: usize,
-    backend: &Backend,
+    data_store: &DataStore,
     output: &OutputFormat,
 ) {
-    if let Ok(items) = backend.load(&stack) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
         if index < items.len() {
             let tmp = std::env::temp_dir().as_path().join("sigi");
@@ -251,7 +251,7 @@ fn edit_item(
                 });
                 items[index].contents.clone_from(&new_content);
 
-                backend.save(&stack, items).unwrap();
+                data_store.save(&stack, items).unwrap();
 
                 output.log(vec!["action", "item"], vec![vec!["Edited", &new_content]]);
             }
@@ -259,8 +259,8 @@ fn edit_item(
     }
 }
 
-fn pick_indices(stack: String, indices: Vec<usize>, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn pick_indices(stack: String, indices: Vec<usize>, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
         let mut seen: Vec<usize> = vec![];
         seen.reserve_exact(indices.len());
@@ -278,36 +278,36 @@ fn pick_indices(stack: String, indices: Vec<usize>, backend: &Backend, output: &
             seen.push(i);
         }
 
-        backend.save(&stack, items).unwrap();
+        data_store.save(&stack, items).unwrap();
 
         if output.is_nonquiet_for_humans() {
-            list_n_latest_items(stack, seen.len(), backend, output);
+            list_n_latest_items(stack, seen.len(), data_store, output);
         }
     }
 }
 
-fn move_latest_item(source: String, dest: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&source) {
+fn move_latest_item(source: String, dest: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&source) {
         let mut items = items;
         if let Some(item) = items.pop() {
-            backend.save(&source, items).unwrap();
+            data_store.save(&source, items).unwrap();
 
             output.log(
                 vec!["action", "new-stack", "old-stack"],
                 vec![vec!["Move", &dest, &source]],
             );
 
-            push_item(dest, item, backend, &OutputFormat::Silent);
+            push_item(dest, item, data_store, &OutputFormat::Silent);
         }
     }
 }
 
-fn move_all_items(source: String, dest: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(src_items) = backend.load(&source) {
+fn move_all_items(source: String, dest: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(src_items) = data_store.load(&source) {
         let count = src_items.len();
 
         if !src_items.is_empty() {
-            let all_items = match backend.load(&dest) {
+            let all_items = match data_store.load(&dest) {
                 Ok(dest_items) => {
                     let mut all_items = dest_items;
                     for item in src_items {
@@ -318,8 +318,8 @@ fn move_all_items(source: String, dest: String, backend: &Backend, output: &Outp
                 _ => src_items,
             };
 
-            backend.save(&dest, all_items).unwrap();
-            backend.save(&source, vec![]).unwrap();
+            data_store.save(&dest, all_items).unwrap();
+            data_store.save(&source, vec![]).unwrap();
         }
 
         output.log(
@@ -329,8 +329,8 @@ fn move_all_items(source: String, dest: String, backend: &Backend, output: &Outp
     }
 }
 
-fn swap_latest_two_items(stack: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn swap_latest_two_items(stack: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
 
         if items.len() < 2 {
@@ -342,20 +342,20 @@ fn swap_latest_two_items(stack: String, backend: &Backend, output: &OutputFormat
         items.push(a);
         items.push(b);
 
-        backend.save(&stack, items).unwrap();
+        data_store.save(&stack, items).unwrap();
 
         if output.is_nonquiet_for_humans() {
-            list_n_latest_items(stack, 2, backend, output);
+            list_n_latest_items(stack, 2, data_store, output);
         }
     }
 }
 
-fn rotate_latest_three_items(stack: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn rotate_latest_three_items(stack: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
 
         if items.len() < 3 {
-            swap_latest_two_items(stack, backend, output);
+            swap_latest_two_items(stack, data_store, output);
             return;
         }
 
@@ -367,16 +367,16 @@ fn rotate_latest_three_items(stack: String, backend: &Backend, output: &OutputFo
         items.push(c);
         items.push(b);
 
-        backend.save(&stack, items).unwrap();
+        data_store.save(&stack, items).unwrap();
 
         if output.is_nonquiet_for_humans() {
-            list_n_latest_items(stack, 3, backend, output);
+            list_n_latest_items(stack, 3, data_store, output);
         }
     }
 }
 
-fn next_to_latest(stack: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn next_to_latest(stack: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         let mut items = items;
         if items.is_empty() {
             return;
@@ -384,20 +384,20 @@ fn next_to_latest(stack: String, backend: &Backend, output: &OutputFormat) {
         let to_the_back = items.pop().unwrap();
         items.insert(0, to_the_back);
 
-        backend.save(&stack, items).unwrap();
+        data_store.save(&stack, items).unwrap();
 
         if output.is_nonquiet_for_humans() {
-            peek_latest_item(stack, backend, output);
+            peek_latest_item(stack, data_store, output);
         }
     }
 }
 
-fn peek_latest_item(stack: String, backend: &Backend, output: &OutputFormat) {
+fn peek_latest_item(stack: String, data_store: &DataStore, output: &OutputFormat) {
     if let OutputFormat::Silent = output {
         return;
     }
 
-    if let Ok(items) = backend.load(&stack) {
+    if let Ok(items) = data_store.load(&stack) {
         let top_item = items.last().map(|i| i.contents.as_str());
 
         let output_it = |it| output.log_always(vec!["position", "item"], it);
@@ -415,19 +415,19 @@ fn peek_latest_item(stack: String, backend: &Backend, output: &OutputFormat) {
     }
 }
 
-fn count_all_items(stack: String, backend: &Backend, output: &OutputFormat) {
+fn count_all_items(stack: String, data_store: &DataStore, output: &OutputFormat) {
     if let OutputFormat::Silent = output {
         return;
     }
 
-    if let Ok(items) = backend.load(&stack) {
+    if let Ok(items) = data_store.load(&stack) {
         let len = items.len().to_string();
         output.log_always(vec!["items"], vec![vec![&len]])
     }
 }
 
-fn is_empty(stack: String, backend: &Backend, output: &OutputFormat) {
-    if let Ok(items) = backend.load(&stack) {
+fn is_empty(stack: String, data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(items) = data_store.load(&stack) {
         if !items.is_empty() {
             output.log_always(vec!["empty"], vec![vec!["false"]]);
             // Exit with a failure (nonzero status) when not empty.
@@ -444,8 +444,8 @@ fn is_empty(stack: String, backend: &Backend, output: &OutputFormat) {
     output.log_always(vec!["empty"], vec![vec!["true"]]);
 }
 
-fn list_stacks(backend: &Backend, output: &OutputFormat) {
-    if let Ok(stacks) = backend.list_stacks() {
+fn list_stacks(data_store: &DataStore, output: &OutputFormat) {
+    if let Ok(stacks) = data_store.list_stacks() {
         let mut stacks = stacks;
         stacks.sort();
         let strs = stacks.iter().map(|stack| vec![stack.as_str()]).collect();
@@ -463,12 +463,12 @@ struct ListRange {
     from_end: bool,
 }
 
-fn list_range(range: ListRange, backend: &Backend, output: &OutputFormat) {
+fn list_range(range: ListRange, data_store: &DataStore, output: &OutputFormat) {
     if let OutputFormat::Silent = output {
         return;
     }
 
-    if let Ok(items) = backend.load(&range.stack) {
+    if let Ok(items) = data_store.load(&range.stack) {
         let limit = match range.limit {
             Some(n) => n,
             None => items.len(),
@@ -533,7 +533,7 @@ fn list_range(range: ListRange, backend: &Backend, output: &OutputFormat) {
     }
 }
 
-fn list_all_items(stack: String, backend: &Backend, output: &OutputFormat) {
+fn list_all_items(stack: String, data_store: &DataStore, output: &OutputFormat) {
     let range = ListRange {
         stack,
         start: 0,
@@ -541,10 +541,10 @@ fn list_all_items(stack: String, backend: &Backend, output: &OutputFormat) {
         from_end: false,
     };
 
-    list_range(range, backend, output);
+    list_range(range, data_store, output);
 }
 
-fn list_n_latest_items(stack: String, n: usize, backend: &Backend, output: &OutputFormat) {
+fn list_n_latest_items(stack: String, n: usize, data_store: &DataStore, output: &OutputFormat) {
     let range = ListRange {
         stack,
         start: 0,
@@ -552,10 +552,10 @@ fn list_n_latest_items(stack: String, n: usize, backend: &Backend, output: &Outp
         from_end: false,
     };
 
-    list_range(range, backend, output);
+    list_range(range, data_store, output);
 }
 
-fn list_n_oldest_items(stack: String, n: usize, backend: &Backend, output: &OutputFormat) {
+fn list_n_oldest_items(stack: String, n: usize, data_store: &DataStore, output: &OutputFormat) {
     let range = ListRange {
         stack,
         start: 0,
@@ -563,7 +563,7 @@ fn list_n_oldest_items(stack: String, n: usize, backend: &Backend, output: &Outp
         from_end: true,
     };
 
-    list_range(range, backend, output);
+    list_range(range, data_store, output);
 }
 
 // ===== Helper functions =====

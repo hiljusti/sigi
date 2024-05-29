@@ -1,4 +1,4 @@
-use crate::data::Backend;
+use crate::data::{DataFormat, DataStore, WorkingDir};
 use crate::effects::StackEffect;
 use crate::output::{NoiseLevel, OutputFormat};
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -13,7 +13,10 @@ pub const SIGI_VERSION: &str = std::env!("CARGO_PKG_VERSION");
 
 const DEFAULT_STACK_NAME: &str = "sigi";
 const DEFAULT_FORMAT: OutputFormat = OutputFormat::Human(NoiseLevel::Normal);
-const DEFAULT_BACKEND: Backend = Backend::HomeDir;
+const DEFAULT_DATA_STORE: DataStore = DataStore {
+    working_dir: WorkingDir::HomeDir,
+    data_format: DataFormat::SigiJson,
+};
 const DEFAULT_SHORT_LIST_LIMIT: usize = 10;
 
 // === Glossary ===
@@ -48,23 +51,30 @@ pub fn run() {
     let args = Cli::parse();
 
     let stack = args.stack.unwrap_or_else(|| DEFAULT_STACK_NAME.into());
+    let store = args
+        .data_store
+        .map(|dir| DataStore {
+            working_dir: WorkingDir::Dir(dir),
+            data_format: DataFormat::SigiJson,
+        })
+        .unwrap_or(DEFAULT_DATA_STORE);
 
     match args.mode {
         None => {
             let output = args.fc.into_output_format().unwrap_or(DEFAULT_FORMAT);
             let peek = StackEffect::Peek { stack };
-            peek.run(&DEFAULT_BACKEND, &output);
+            peek.run(&store, &output);
         }
         Some(Mode::Command(command)) => {
             let (effect, effect_fc) = command.into_effect_and_fc(stack);
             let output = args.fc.into_fallback_for(effect_fc);
-            effect.run(&DEFAULT_BACKEND, &output);
+            effect.run(&store, &output);
         }
         Some(Mode::Interactive { fc }) => {
             let output = args.fc.into_fallback_for(fc);
-            interact(stack, output);
+            interact(stack, store, output);
         }
-        Some(Mode::ReadStdin) => interact(stack, OutputFormat::TerseText),
+        Some(Mode::ReadStdin) => interact(stack, store, OutputFormat::TerseText),
     };
 }
 
@@ -75,9 +85,13 @@ struct Cli {
     #[command(flatten)]
     fc: FormatConfig,
 
-    #[arg(short='t', long, visible_aliases = &["topic", "about", "namespace"])]
     /// Manage items in a specific stack
+    #[arg(short='t', long, visible_aliases = &["topic", "about", "namespace"])]
     stack: Option<String>,
+
+    /// (Advanced) Manage sigi stacks in a specific directory. The default is either the value of a SIGI_HOME environment variable or your OS-specific home directory
+    #[arg(short = 'd', long, visible_aliases = &["dir", "directory", "store"])]
+    data_store: Option<String>,
 
     #[command(subcommand)]
     mode: Option<Mode>,

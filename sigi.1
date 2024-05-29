@@ -50,6 +50,11 @@ Manage items in a specific STACK. If no STACK is provided, it will use "sigi"
 by default. It's recommended to use shell aliases to access your stacks. (See
 .B EXAMPLES
 below.)
+.TP
+\-d, \-\-data\-store <DATA_STORE>
+(Advanced) Manage sigi stacks in a specific directory. The default is either
+the value of a SIGI_HOME environment variable or your OS-specific home
+directory [aliases: dir, directory, store]
 .\"
 .\" ================================
 .\"
@@ -138,7 +143,7 @@ exit: Buen bi\[u00E5]he!
 .EE
 .RE
 .PP
-No OPTIONS (flags) are understood in interactive mode.
+No OPTIONS (flags) of subcommands are understood in interactive mode.
 .PP
 The ; character can be used to separate commands.
 .PP
