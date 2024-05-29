@@ -218,6 +218,14 @@ fn parse_effect(tokens: Vec<&str>, stack: String) -> ParseEffectResult {
     if DELETE_ALL_TERMS.contains(term) {
         return Effect(DeleteAll { stack });
     }
+    if EDIT_TERMS.contains(term) {
+        let index = parse_n().unwrap_or(0);
+        return Effect(Edit {
+            stack,
+            editor: resolve_editor(None),
+            index,
+        });
+    }
     if HEAD_TERMS.contains(term) {
         let n = parse_n().unwrap_or(DEFAULT_SHORT_LIST_LIMIT);
         return Effect(Head { stack, n });

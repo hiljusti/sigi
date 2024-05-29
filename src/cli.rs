@@ -28,6 +28,7 @@ const DELETE_ALL_TERMS: [&str; 6] = [
     "cancel-all",
     "drop-all",
 ];
+const EDIT_TERMS: [&str; 1] = ["edit"];
 const HEAD_TERMS: [&str; 3] = ["head", "top", "first"];
 const IS_EMPTY_TERMS: [&str; 2] = ["is-empty", "empty"];
 const LIST_TERMS: [&str; 4] = ["list", "ls", "snoop", "all"];
@@ -138,7 +139,7 @@ enum Command {
     },
 
     /// Edit the content of an item. Other metadata like creation date is left unchanged.
-    #[command()]
+    #[command(visible_aliases = &EDIT_TERMS[1..])]
     Edit {
         /// The editor to execute. If unspecified, the editor launched will be the value of
         /// VISUAL, EDITOR, or if both env variables are unset, nano.
@@ -287,10 +288,7 @@ impl Command {
             Command::Edit { editor, n, fc } => (
                 Edit {
                     stack,
-                    editor: editor
-                        .or_else(|| std::env::var("VISUAL").ok())
-                        .or_else(|| std::env::var("EDITOR").ok())
-                        .unwrap_or("nano".into()),
+                    editor: resolve_editor(editor),
                     index: n.unwrap_or(0),
                 },
                 fc,
@@ -319,6 +317,13 @@ impl Command {
             }
         }
     }
+}
+
+pub fn resolve_editor(editor: Option<String>) -> String {
+    editor
+        .or_else(|| std::env::var("VISUAL").ok())
+        .or_else(|| std::env::var("EDITOR").ok())
+        .unwrap_or("nano".into())
 }
 
 #[derive(Args)]
