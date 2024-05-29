@@ -6,7 +6,7 @@ use run_sigi::{piping, sigi};
 fn sigi_interactive_preamble() {
     let res = sigi("_integ::interactive", &["interactive"]);
     res.assert_success();
-    res.assert_stdout_line_starts_with("sigi 3.6");
+    res.assert_stdout_line_starts_with("sigi 3.7");
     res.assert_stdout_line_starts_with(r#"Type "exit", "quit", or "q" to quit"#);
     res.assert_stdout_line_starts_with(
         r#"Type "?" for quick help, or "help" for a more verbose help message"#,
@@ -17,7 +17,7 @@ fn sigi_interactive_preamble() {
 #[test]
 fn sigi_interactive_basic() {
     let res = piping(&["push hello world"]).into_sigi("_integ::interactive", &["interactive"]);
-    res.assert_stdout_line_starts_with("sigi 3.6");
+    res.assert_stdout_line_starts_with("sigi 3.7");
     res.assert_stdout_line_starts_with(r#"Type "exit", "quit", or "q" to quit"#);
     res.assert_stdout_line_starts_with(
         r#"Type "?" for quick help, or "help" for a more verbose help message"#,

@@ -1,7 +1,7 @@
 [package]
 name = "sigi"
-version = "3.6.4"
-authors = ["J.R. Hill <justin@so.dang.cool>"]
+version = "3.7.0"
+authors = ["Justin \"Boonie Pepper\" Hill <justin@so.dang.cool>"]
 edition = "2021"
 license = "GPL-2.0-only"
 description = "An organizing tool for terminal lovers who hate organizing"

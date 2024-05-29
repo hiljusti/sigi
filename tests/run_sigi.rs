@@ -259,6 +259,6 @@ fn assert_stderr_empty() {
 fn sigi_piping_basic() {
     let res = piping(&[]).into_sigi("_integ::basic", &["interactive"]);
     assert_eq!(res.status, SigiStatus::Unknown);
-    res.assert_stdout_line_starts_with("sigi 3.6");
+    res.assert_stdout_line_starts_with("sigi 3.7");
     res.assert_stderr_empty();
 }
